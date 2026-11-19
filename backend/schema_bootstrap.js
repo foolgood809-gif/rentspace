@@ -10,6 +10,7 @@ const AUX_TABLES_SQL = [
     user_id INT NOT NULL,
     token_hash CHAR(64) NOT NULL,
     expires_at DATETIME NOT NULL,
+    revoked_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (session_id),
     UNIQUE KEY uq_auth_sessions_token_hash (token_hash),
@@ -47,6 +48,7 @@ const AUX_TABLES_SQL = [
 ];
 
 const COLUMN_UPGRADES = [
+  { table: "auth_sessions", column: "revoked_at", def: "DATETIME DEFAULT NULL" },
   { table: "users", column: "bank_info", def: "VARCHAR(255) DEFAULT ''" },
   { table: "spaces", column: "hours_json", def: "TEXT DEFAULT NULL" },
   { table: "spaces", column: "amenities_json", def: "TEXT DEFAULT NULL" },
@@ -102,11 +104,7 @@ async function ensureDemoPasswords(db) {
   await db.query(
     `UPDATE users SET password_hash = ?
      WHERE username IN ('owner01', 'renter01', 'admin01', 'mint_k', 'owner02')
-       AND (
-         password_hash LIKE 'scrypt$%'
-         OR password_hash = 'SEED_ONLY_NOT_A_LOGIN_HASH'
-         OR password_hash = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
-       )`,
+       AND (password_hash LIKE 'scrypt$%' OR password_hash = 'SEED_ONLY_NOT_A_LOGIN_HASH')`,
     [defaultHash]
   );
 }
